@@ -1,23 +1,17 @@
 from deepfindET.models.res_unet import my_res_unet_model
-from deepfindET.models.attention_unet import attention_unet
 from deepfindET.models.unet import my_unet_model 
 from deepfindET import settings
-from deepfindET.models.trans_res_unet import my_res_unet_transformer_patch_model
 import os
 
 def load_model(dim_in, Ncl, model_name, trained_weights_path=None, filters = [48, 64, 128], dropout_rate = 0):
 
     # Play with Model to Use
-    assert model_name in ['unet', 'res_unet','trans_res_unet', 'attention_unet'], "Invalid model name specified. Use 'unet' or 'res_unet'."
+    assert model_name in ['unet', 'res_unet'], "Invalid model name specified. Use 'unet' or 'res_unet'."
 
     if model_name == 'unet':
         net = my_unet_model(dim_in, Ncl, filters, dropout_rate)
     elif model_name == 'res_unet':
         net = my_res_unet_model(dim_in, Ncl, filters, dropout_rate)
-    elif model_name == 'attention_unet':
-        net = attention_unet(dim_in, Ncl, filters, dropout_rate) 
-    elif model_name == 'trans_res_unet':
-        net = my_res_unet_transformer_patch_model(dim_in, Ncl, filters, dropout_rate)
     else:
         raise ValueError("Invalid model name specified. Valid options {unet, or res_unet}")
 
