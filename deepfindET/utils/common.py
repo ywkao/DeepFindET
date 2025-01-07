@@ -176,7 +176,7 @@ def create_sphere(dim, R):  # TODO move to core_utils?
     return sphere
 
 
-def split_datasets(datasets, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, savePath=None):
+def split_datasets(datasets, train_ratio=0.5, val_ratio=0.5,  savePath=None):
     """
     Splits a given dataset into three subsets: training, validation, and testing. The proportions
     of each subset are determined by the provided ratios, ensuring that they add up to 1. The
@@ -198,14 +198,15 @@ def split_datasets(datasets, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, sav
     # assert train_ratio + val_ratio + test_ratio == 1.0, "Ratios must add up to 1."
 
     # First, split into train and remaining (30%)
-    train_datasets, remaining_datasets = train_test_split(datasets, test_size=(1 - train_ratio), random_state=42)
+    train_datasets, valid_datasets = train_test_split(datasets, test_size=(1 - train_ratio), random_state=42)
 
     # Then, split the remaining into validation and test
-    val_datasets, test_datasets = train_test_split(
-        remaining_datasets,
-        test_size=(test_ratio / (val_ratio + test_ratio)),
-        random_state=42,
-    )
+    #val_datasets, test_datasets = train_test_split(
+    #    remaining_datasets,
+    #    test_size=(test_ratio / (val_ratio + test_ratio)),
+    #    random_state=42,
+    #)
+    test_datasets = []
 
     if savePath is not None:
         save_datasets_list(savePath, train_datasets, val_datasets, test_datasets)

@@ -294,7 +294,7 @@ def train_model(
     if class_weights is not None:   trainer.create_class_weights(class_weights, path_train)
       
     # Load Specified Model Architecture and Potential Pre-Trained Weights
-    trainer.load_model(model_name, model_pre_weights, model_filters, model_dropout)
+    #trainer.load_model(model_name, model_pre_weights, model_filters, model_dropout)
 
     # A Certain Number of Tomograms are Loaded Prior to Training (sample_size)
     # And picks from these tomograms are trained for a specified number of epochs (NsubEpoch)
@@ -328,9 +328,8 @@ def train_model(
         tomo_ids = [r.name for r in copick.from_file(path_train).runs]
         (trainList, validationList, testList) = cm.split_datasets(
             tomo_ids,
-            train_ratio=0.7,
-            val_ratio=0.15,
-            test_ratio=0.15,
+            train_ratio=0.9,
+            val_ratio=0.1,
             savePath=output_path,
         )
         # Swap if Test Runs is Larger than Validation Runs
