@@ -198,7 +198,7 @@ def split_datasets(datasets, train_ratio=0.5, val_ratio=0.5,  savePath=None):
     # assert train_ratio + val_ratio + test_ratio == 1.0, "Ratios must add up to 1."
 
     # First, split into train and remaining (30%)
-    train_datasets, valid_datasets = train_test_split(datasets, test_size=(1 - train_ratio), random_state=42)
+    train_datasets, val_datasets = train_test_split(datasets, test_size=(1 - train_ratio), random_state=42)
 
     # Then, split the remaining into validation and test
     #val_datasets, test_datasets = train_test_split(
