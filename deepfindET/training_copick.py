@@ -132,6 +132,7 @@ class Train(core.DeepFindET):
         self.check_attributes()
 
         if self.net is None:
+            print("No model is found....Initialising Unet model")
             self.net, self.model_parameters = model_loader.load_model(self.dim_in, self.Ncl, 'unet', None)          
 
         # TensorBoard writer
