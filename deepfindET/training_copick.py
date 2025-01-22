@@ -16,7 +16,8 @@ mixed_precision.set_global_policy(policy)
 
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
-    def __init__(self, Ncl, dim_in):
+    def __init__(self, Ncl, dim_in, learning_rate=0.0001):
+        print(f"[INFO] training_copick.py::Train: learning_rate = {learning_rate}")
         core.DeepFindET.__init__(self)
         self.path_out = "./"
 
@@ -39,7 +40,7 @@ class Train(core.DeepFindET):
         self.steps_per_valid = 10  # number of samples for validation
 
         # Optimization Paramters 
-        self.learning_rate = 0.0001
+        self.learning_rate = learning_rate
         self.beta1 = 0.9
         self.beta2 = 0.999
         self.epislon = 1e-8
