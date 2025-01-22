@@ -5,7 +5,7 @@ import numpy as np
 
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import mixed_precision
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, SGD, RMSprop, AdamW, Nadam
 
 from deepfindET import callbacks, losses, settings
 from deepfindET.utils import core, augmentdata
@@ -16,7 +16,7 @@ mixed_precision.set_global_policy(policy)
 
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
-    def __init__(self, Ncl, dim_in, learning_rate=0.0001):
+    def __init__(self, Ncl, dim_in, learning_rate=0.0001, optimizer='Adam'):
         print(f"[INFO] training_copick.py::Train: learning_rate = {learning_rate}")
         core.DeepFindET.__init__(self)
         self.path_out = "./"
@@ -45,9 +45,20 @@ class Train(core.DeepFindET):
         self.beta2 = 0.999
         self.epislon = 1e-8
         self.decay = 0
-        self.optimizer = Adam(learning_rate=self.learning_rate, 
-                              beta_1=self.beta1, beta_2=self.beta2, 
-                              epsilon=self.epislon, decay=self.decay)
+
+        if optimizer=='SGD':
+            self.optimizer = SGD(learning_rate=self.learning_rate)
+        elif optimizer=='RMSprop':
+            self.optimizer = RMSprop(learning_rate=self.learning_rate)
+        elif optimizer=='AdamW':
+            self.optimizer = AdamW(learning_rate=self.learning_rate)
+        elif optimizer=='Nadam':
+            self.optimizer = Nadam(learning_rate=self.learning_rate)
+        else:
+            self.optimizer = Adam(learning_rate=self.learning_rate,
+                                  beta_1=self.beta1, beta_2=self.beta2,
+                                  epsilon=self.epislon, decay=self.decay)
+
         self.loss = losses.tversky_loss
 
         # random shifts applied when sampling data- and target-patches (in voxels)

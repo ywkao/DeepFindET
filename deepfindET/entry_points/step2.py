@@ -260,6 +260,7 @@ def train_model(
     train_tomo_ids: str = None,
     class_weights: Optional[List[Tuple[str,float]]] = None,        
     learning_rate: float = 0.0001,
+    optimizer: str = "Adam",
     ):
 
     # Parse input parameters
@@ -276,7 +277,7 @@ def train_model(
     Nclass = n_class
 
     # Initialize training task:
-    trainer = Train(Ncl=Nclass, dim_in=dim_in, learning_rate=learning_rate)
+    trainer = Train(Ncl=Nclass, dim_in=dim_in, learning_rate=learning_rate, optimizer=optimizer)
     trainer.path_out = output_path  # output path
     trainer.batch_size = batch_size
     trainer.epochs = epochs
