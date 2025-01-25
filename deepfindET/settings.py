@@ -31,6 +31,7 @@ class LearningRateParameters(BaseModel):
     monitor: str
     factor: float
     patience: int
+    schedule_type: str
 
 class NetworkParameters(BaseModel):
     architecture: str
@@ -56,4 +57,4 @@ class ExperimentConfig(BaseModel):
         with open(json_file_path, 'w') as f:
             json.dump(self.dict(), f, indent=4)
 
-        print(f"Configuration saved to {json_file_path}")    
+        print(f"Configuration saved to {json_file_path}")
