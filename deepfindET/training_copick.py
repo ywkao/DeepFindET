@@ -405,7 +405,19 @@ class Train(core.DeepFindET):
             patience=callback.patience
         )
 
-    def save_training_parameters(self, path_train, path_valid, model_parameters, callback):
+    def export_lr_parameters_from_scheduler(self, callback):
+        """
+        Exports learning rate scheduler parameters from callback.
+        """
+        initial_lr = self.learning_rate
+        schedule_fn = callback.schedule
+
+        return settings.LearningRateParameters(
+            learning_rate=initial_lr,
+            schedule_function=schedule_fn
+        )
+
+    def save_training_parameters(self, path_train, path_valid, model_parameters, scheduler_callback, plateau_callback):
         """
         Saves the training configuration, including paths, model parameters, and training parameters, to a JSON file.
 
@@ -435,7 +447,9 @@ class Train(core.DeepFindET):
         training = self.export_training_parameters()
 
         # Export learning rate parameters using the provided callback
-        learnRate = self.export_lr_parameters(callback)
+        scheduler_param = self.export_lr_parameters_from_scheduler(scheduler_callback)
+        plateau_param = self.export_lr_parameters(plateau_callback)
+        learnRate = float(tf.keras.backend.get_value(self.net.optimizer.learning_rate))
 
         # Create an ExperimentConfig model to encapsulate the entire experiment setup
         train_config = settings.ExperimentConfig(
