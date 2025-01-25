@@ -16,7 +16,7 @@ mixed_precision.set_global_policy(policy)
 
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
-    def __init__(self, Ncl, dim_in, learning_rate=0.0001, optimizer='Adam'):
+    def __init__(self, Ncl, dim_in, learning_rate=0.0001, optimizer='Adam', lr_scheduler="default"):
         print(f"[INFO] training_copick.py::Train: learning_rate = {learning_rate}")
         core.DeepFindET.__init__(self)
         self.path_out = "./"
@@ -40,6 +40,7 @@ class Train(core.DeepFindET):
         self.steps_per_valid = 10  # number of samples for validation
 
         # Optimization Paramters 
+        self.lr_scheduler = lr_scheduler
         self.learning_rate = learning_rate
         self.beta1 = 0.9
         self.beta2 = 0.999
@@ -178,12 +179,35 @@ class Train(core.DeepFindET):
         self.batch_target = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, self.Ncl))
 
         # Callbacks for Save weights and Clear Memory
+        initial_learning_rate = self.learning_rate
+
+        def defaultLR(epoch, lr):
+            return initial_learning_rate
+
+        def exp_decay(epoch, lr):
+            if epoch < 5:
+                return initial_learning_rate
+            return initial_learning_rate * tf.math.exp(-0.2*(epoch-5))
+
+        def cosine_decay(epoch, lr):
+            if epoch < 5:
+                return initial_learning_rate
+            remaining_epochs = 45 # 50-5
+            return initial_learning_rate * (1 + tf.math.cos(tf.math.pi*(epoch-5)/remaining_epochs)) / 2
+
         callbacks.ClearMemoryCallback()
         save_weights_callback = callbacks.SaveWeightsCallback(self.path_out)
-        learning_rate_callback = tf.keras.callbacks.ReduceLROnPlateau(
+
+        scheduler_callback = tf.keras.callbacks.LearningRateScheduler(
+            exp_decay if self.lr_scheduler == "exp_decay" else
+            cosine_decay if self.lr_scheduler == "cosine_decay" else
+            defaultLR
+        )
+
+        plateau_callback = tf.keras.callbacks.ReduceLROnPlateau(
             monitor="val_f1",
-            factor=0.75,
-            patience=6,
+            factor=0.2,
+            patience=5,
             min_lr=1e-6,
             verbose=1,
         )
@@ -203,7 +227,8 @@ class Train(core.DeepFindET):
         # Save Training Parameters as JSON
         self.save_training_parameters(path_train, path_valid, 
                                       self.model_parameters, 
-                                      learning_rate_callback)
+                                      scheduler_callback,
+                                      plateau_callback)
         
         # Train the model using model.fit()
         self.display("Launch training ...")
@@ -219,7 +244,8 @@ class Train(core.DeepFindET):
                 save_weights_callback,
                 plotting_callback,
                 swap_callback,
-                learning_rate_callback,
+                scheduler_callback,
+                plateau_callback,
             ],
             verbose=1,
         )
