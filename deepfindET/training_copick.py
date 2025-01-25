@@ -449,7 +449,8 @@ class Train(core.DeepFindET):
         # Export learning rate parameters using the provided callback
         ##### scheduler_param = self.export_lr_parameters_from_scheduler(scheduler_callback)
         ##### plateau_param = self.export_lr_parameters(plateau_callback)
-        learnRate = float(tf.keras.backend.get_value(self.net.optimizer.learning_rate))
+        ##### learnRate = float(tf.keras.backend.get_value(self.net.optimizer.learning_rate))
+        learnRate = self.export_lr_parameters(plateau_callback) # to be updated
 
         # Create an ExperimentConfig model to encapsulate the entire experiment setup
         train_config = settings.ExperimentConfig(
