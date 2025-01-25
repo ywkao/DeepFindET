@@ -204,6 +204,9 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
             labels=self.label_list,
         )
 
+        # Make F1 available in logs
+        logs["val_f1"] = np.mean(scores[2]) # average all classes
+
         self.history["val_f1"].append(scores[2])
         self.history["val_recall"].append(scores[1])
         self.history["val_precision"].append(scores[0])
@@ -211,6 +214,53 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
         # Save history and plot
         core.save_history(self.history, os.path.join(self.path_out, "net_train_history.h5") )
         core.plot_history(self.history, os.path.join(self.path_out, "net_train_history_plot.png") )
+
+
+# Customize learning rate scheduler
+class CustomLRScheduler(tf.keras.callbacks.Callback):
+    def __init__(self, schedule_fn, monitor='val_f1', factor=0.2, patience=5, min_lr=1e-6):
+        super().__init__()
+        self.schedule_fn = schedule_fn
+        self.monitor = monitor
+        self.factor = factor
+        self.patience = patience
+        self.min_lr = min_lr
+        self.wait = 0
+        self.best = float('inf')
+        self.scheduled_lr = 1e-3 # dummy init
+        self.learning_rate_history = []
+
+    def on_epoch_begin(self, epoch, logs=None):
+        scheduled_lr = self.schedule_fn(epoch)
+        if self.wait >= self.patience:
+            scheduled_lr *= self.factor
+            self.wait = 0
+        self.scheduled_lr = max(scheduled_lr, self.min_lr)
+
+        print("Type of self.model:", type(self.model))
+        print("Type of self.model.optimizer:", type(self.model.optimizer))
+        print("Type of self.model.optimizer.learning_rate:", type(self.model.optimizer.learning_rate))
+        print("Value of self.model.optimizer.learning_rate:", self.model.optimizer.learning_rate)
+
+        self.model.optimizer.learning_rate.assign(self.scheduled_lr)
+
+    def on_epoch_end(self, epoch, logs=None):
+        # Get the current learning rate and store it in the history
+        self.learning_rate_history.append({
+            'epoch': epoch,
+            'learning_rate': self.scheduled_lr
+        })
+
+        # Check f1 score
+        current = logs.get(self.monitor)
+        if current is None:
+            print(f"Warning: {self.monitor} is not found in logs.")
+            return  # skip the check
+        if current < self.best:
+            self.best = current
+            self.wait = 0
+        else:
+            self.wait += 1
 
 
 def log_images_func(model, validation_data, steps):
