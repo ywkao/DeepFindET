@@ -34,6 +34,12 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
             scheduled_lr *= self.factor
             self.wait = 0
         self.scheduled_lr = max(scheduled_lr, self.min_lr)
+
+        print("Type of self.model:", type(self.model))
+        print("Type of self.model.optimizer:", type(self.model.optimizer))
+        print("Type of self.model.optimizer.learning_rate:", type(self.model.optimizer.learning_rate))
+        print("Value of self.model.optimizer.learning_rate:", self.model.optimizer.learning_rate)
+
         tf.keras.backend.set_value(self.model.optimizer.learning_rate, self.scheduled_lr)
 
     def on_epoch_end(self, epoch, logs=None):
