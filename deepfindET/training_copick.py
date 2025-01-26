@@ -2,6 +2,7 @@ from collections import defaultdict
 import tensorflow as tf
 import copick, json, os
 import numpy as np
+import pickle
 
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import mixed_precision
@@ -80,7 +81,7 @@ class Train(core.DeepFindET):
         self.learning_rate = learning_rate
         self.beta1 = 0.9
         self.beta2 = 0.999
-        self.epislon = 1e-8
+        self.epsilon = 1e-8
         self.decay = 0
 
         if optimizer=='SGD':
@@ -94,7 +95,7 @@ class Train(core.DeepFindET):
         else:
             self.optimizer = Adam(learning_rate=self.learning_rate,
                                   beta_1=self.beta1, beta_2=self.beta2,
-                                  epsilon=self.epislon, decay=self.decay)
+                                  epsilon=self.epsilon, decay=self.decay)
 
         self.loss = losses.get_tversky_loss()
 
