@@ -40,7 +40,7 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         print("Type of self.model.optimizer.learning_rate:", type(self.model.optimizer.learning_rate))
         print("Value of self.model.optimizer.learning_rate:", self.model.optimizer.learning_rate)
 
-        tf.keras.backend.set_value(self.model.optimizer.learning_rate, self.scheduled_lr)
+        self.model.optimizer.learning_rate.assign(self.scheduled_lr)
 
     def on_epoch_end(self, epoch, logs=None):
         current = logs.get(self.monitor)
