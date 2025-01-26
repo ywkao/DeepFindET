@@ -230,7 +230,7 @@ class Train(core.DeepFindET):
                        defaultLR)
 
         scheduler_callback = CustomLRScheduler(
-            schedule_fn=scheduler_fn,
+            schedule_fn=schedule_fn,
             monitor="val_f1",
             factor=0.2,
             patience=5,
