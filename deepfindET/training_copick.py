@@ -86,7 +86,7 @@ class Train(core.DeepFindET):
                                   beta_1=self.beta1, beta_2=self.beta2,
                                   epsilon=self.epislon, decay=self.decay)
 
-        self.loss = losses.tversky_loss
+        self.loss = losses.get_tversky_loss()
 
         # random shifts applied when sampling data- and target-patches (in voxels)
         self.Lrnd = 15

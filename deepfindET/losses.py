@@ -14,29 +14,47 @@ import tensorflow as tf
 # alpha=beta=0.5 : dice coefficient
 # alpha=beta=1   : tanimoto coefficient (also known as jaccard)
 # alpha+beta=1   : produces set of F*-scores
-def tversky_loss(y_true, y_pred, alpha = 0.3, beta=0.7, epsilon = 1e-3 ):
+##### def tversky_loss(y_true, y_pred, alpha = 0.3, beta=0.7, epsilon = 1e-3 ):
+##### 
+#####     # Assign Alpha as A Member Variable
+#####     tversky_loss.alpha = alpha
+#####     tversky_loss.beta = beta
+#####     tversky_loss.epislon = epsilon
+##### 
+#####     ones = tf.ones(tf.shape(y_true))
+#####     p0 = y_pred  # proba that voxels are class i
+#####     p1 = ones - y_pred  # proba that voxels are not class i
+#####     g0 = y_true
+#####     g1 = ones - y_true
+##### 
+#####     num = K.sum(p0 * g0, (0, 1, 2, 3))
+#####     den = num + alpha * K.sum(p0 * g1, (0, 1, 2, 3)) + beta * K.sum(p1 * g0, (0, 1, 2, 3)) + epsilon
+##### 
+#####     T = K.sum(num / den)  # when summing over classes, T has dynamic range [0 Ncl]
+##### 
+#####     Ncl = tf.cast(tf.shape(y_true)[-1], 'float32')
+#####     return Ncl - T
+##### 
+##### # Assign a name to the function
+##### tversky_loss.name = 'tversky_loss'
 
-    # Assign Alpha as A Member Variable
-    tversky_loss.alpha = alpha
-    tversky_loss.beta = beta
-    tversky_loss.epislon = epsilon
+def get_tversky_loss(alpha=0.3, beta=0.7, epsilon=1e-3):
+    def _tversky_loss(y_true, y_pred):
+        ones = tf.ones(tf.shape(y_true))
+        p0 = y_pred
+        p1 = ones - y_pred
+        g0 = y_true
+        g1 = ones - y_true
 
-    ones = tf.ones(tf.shape(y_true))
-    p0 = y_pred  # proba that voxels are class i
-    p1 = ones - y_pred  # proba that voxels are not class i
-    g0 = y_true
-    g1 = ones - y_true
+        num = K.sum(p0 * g0, (0, 1, 2, 3))
+        den = num + alpha * K.sum(p0 * g1, (0, 1, 2, 3)) + beta * K.sum(p1 * g0, (0, 1, 2, 3)) + epsilon
 
-    num = K.sum(p0 * g0, (0, 1, 2, 3))
-    den = num + alpha * K.sum(p0 * g1, (0, 1, 2, 3)) + beta * K.sum(p1 * g0, (0, 1, 2, 3)) + epsilon
+        T = K.sum(num / den)
+        Ncl = tf.cast(tf.shape(y_true)[-1], 'float32')
+        return Ncl - T
 
-    T = K.sum(num / den)  # when summing over classes, T has dynamic range [0 Ncl]
-
-    Ncl = tf.cast(tf.shape(y_true)[-1], 'float32')
-    return Ncl - T
-
-# Assign a name to the function
-tversky_loss.name = 'tversky_loss'
+    _tversky_loss.name = 'tversky_loss'
+    return _tversky_loss
 
 def focal_tversky_loss(y_true, y_pred, alpha=0.3, beta=0.7, gamma=2.0, epsilon=1e-3):
     """
