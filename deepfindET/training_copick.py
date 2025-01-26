@@ -228,7 +228,7 @@ class Train(core.DeepFindET):
             print("No GPU found.")        
 
         # Build network (not in constructor, else not possible to init model with weights from previous train round):
-        self.net.compile(optimizer=self.optimizer, loss=self.loss, metrics=["accuracy"])
+        self.net.compile(optimizer=self.optimizer, loss=self.loss, metrics=["accuracy", "val_f1"])
 
         self.batch_data = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, 1))
         self.batch_target = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, self.Ncl))
