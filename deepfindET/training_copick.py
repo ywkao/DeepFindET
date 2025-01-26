@@ -421,7 +421,7 @@ class Train(core.DeepFindET):
             LearningRateParameters: A Pydantic model containing the learning rate parameters.
         """        
         return settings.LearningRateParameters(
-            learning_rate=float(self.net.optimizer.inner_optimizer.lr.numpy()),
+            learning_rate=float(self.net.optimizer.inner_optimizer._get_hyper('learning_rate').numpy()),
             min_learning_rate=callback.min_lr,
             monitor=callback.monitor,
             factor=callback.factor,
