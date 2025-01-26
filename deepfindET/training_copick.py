@@ -30,7 +30,7 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         if self.wait >= self.patience:
             scheduled_lr *= self.factor
             self.wait = 0
-        tf.keras.backend.set_value(self.model.optimizer.inner_optimizer._learning_rate, max(scheduled_lr, self.min_lr))
+        tf.keras.backend.set_value(self.model.optimizer.learning_rate, max(scheduled_lr, self.min_lr))
 
     def on_epoch_end(self, epoch, logs=None):
         current = logs.get(self.monitor)
@@ -106,6 +106,28 @@ class Train(core.DeepFindET):
 
         self.check_attributes()
         self.data_augmentor = augmentdata.DataAugmentation()
+
+        self.learning_rate_history = []
+
+    def on_epoch_end(self, epoch, logs=None):
+        """
+        Track learning rate at the end of each epoch.
+        """
+        # Get the current learning rate and store it in the history
+        learning_rate = self.net.optimizer.learning_rate.numpy()
+        self.learning_rate_history.append({
+            'epoch': epoch,
+            'learning_rate': learning_rate
+        })
+
+    def save_learning_rate(self):
+        """
+        Save the recorded learning rates to a Pickle file.
+        """
+        filename = os.path.join(self.path_out, "learning_rates.pkl")
+        with open(filename, 'wb') as f:
+            pickle.dump(self.learning_rate_history, f)
+        print(f"Learning rates saved to {filename}")
 
     def check_attributes(self):
         self.is_positive_int(self.Ncl, "Ncl")
@@ -208,7 +230,7 @@ class Train(core.DeepFindET):
         callbacks.ClearMemoryCallback()
         save_weights_callback = callbacks.SaveWeightsCallback(self.path_out)
 
-		# Schedule leaning rate
+        # Schedule leaning rate
         initial_learning_rate = self.learning_rate
 
         def defaultLR(epoch):
@@ -273,6 +295,10 @@ class Train(core.DeepFindET):
             verbose=1,
         )
 
+        # After training ends, save the learning rates
+        self.save_learning_rate()
+
+        # Save final model weights
         self.net.save( os.path.join(self.path_out, "net_weights_FINAL.h5") )
 
     def create_tf_dataset(
@@ -421,12 +447,12 @@ class Train(core.DeepFindET):
             LearningRateParameters: A Pydantic model containing the learning rate parameters.
         """        
         return settings.LearningRateParameters(
-            learning_rate=float(self.net.optimizer.inner_optimizer._learning_rate.numpy()),
+            learning_rate=self.learning_rate,
             min_learning_rate=callback.min_lr,
             monitor=callback.monitor,
             factor=callback.factor,
             patience=callback.patience,
-			schedule_type=self.lr_scheduler
+            schedule_type=self.lr_scheduler
         )
 
     def save_training_parameters(self, path_train, path_valid, model_parameters, callback):
