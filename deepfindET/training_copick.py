@@ -15,51 +15,6 @@ from deepfindET.models import model_loader
 policy = mixed_precision.Policy("mixed_float16")
 mixed_precision.set_global_policy(policy)
 
-class CustomLRScheduler(tf.keras.callbacks.Callback):
-    def __init__(self, schedule_fn, monitor='val_f1', factor=0.2, patience=5, min_lr=1e-6):
-        super().__init__()
-        self.schedule_fn = schedule_fn
-        self.monitor = monitor
-        self.factor = factor
-        self.patience = patience
-        self.min_lr = min_lr
-        self.wait = 0
-        self.best = float('inf')
-        self.scheduled_lr = 1e-3 # dummy init
-        self.learning_rate_history = []
-
-    def on_epoch_begin(self, epoch, logs=None):
-        scheduled_lr = self.schedule_fn(epoch)
-        if self.wait >= self.patience:
-            scheduled_lr *= self.factor
-            self.wait = 0
-        self.scheduled_lr = max(scheduled_lr, self.min_lr)
-
-        print("Type of self.model:", type(self.model))
-        print("Type of self.model.optimizer:", type(self.model.optimizer))
-        print("Type of self.model.optimizer.learning_rate:", type(self.model.optimizer.learning_rate))
-        print("Value of self.model.optimizer.learning_rate:", self.model.optimizer.learning_rate)
-
-        self.model.optimizer.learning_rate.assign(self.scheduled_lr)
-
-    def on_epoch_end(self, epoch, logs=None):
-        # Get the current learning rate and store it in the history
-        self.learning_rate_history.append({
-            'epoch': epoch,
-            'learning_rate': self.scheduled_lr
-        })
-
-        # Check f1 score
-        current = logs.get(self.monitor)
-        if current is None:
-            print(f"Warning: {self.monitor} is not found in logs.")
-            return  # skip the check
-        if current < self.best:
-            self.best = current
-            self.wait = 0
-        else:
-            self.wait += 1
-
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
     def __init__(self, Ncl, dim_in, learning_rate=0.0001, optimizer='Adam', lr_scheduler="default"):
@@ -228,7 +183,7 @@ class Train(core.DeepFindET):
             print("No GPU found.")        
 
         # Build network (not in constructor, else not possible to init model with weights from previous train round):
-        self.net.compile(optimizer=self.optimizer, loss=self.loss, metrics=["accuracy", "val_f1"])
+        self.net.compile(optimizer=self.optimizer, loss=self.loss, metrics=["accuracy"])
 
         self.batch_data = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, 1))
         self.batch_target = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, self.Ncl))
@@ -258,7 +213,7 @@ class Train(core.DeepFindET):
                        cosine_decay if self.lr_scheduler == "cosine_decay" else
                        defaultLR)
 
-        scheduler_callback = CustomLRScheduler(
+        scheduler_callback = callbacks.CustomLRScheduler(
             schedule_fn=schedule_fn,
             monitor="val_f1",
             factor=0.2,
