@@ -43,19 +43,22 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         self.model.optimizer.learning_rate.assign(self.scheduled_lr)
 
     def on_epoch_end(self, epoch, logs=None):
-        current = logs.get(self.monitor)
-        if current < self.best:
-            self.best = current
-            self.wait = 0
-        else:
-            self.wait += 1
-
         # Get the current learning rate and store it in the history
         self.learning_rate_history.append({
             'epoch': epoch,
             'learning_rate': self.scheduled_lr
         })
 
+        # Check f1 score
+        current = logs.get(self.monitor)
+        if current is None:
+            print(f"Warning: {self.monitor} is not found in logs.")
+            return  # skip the check
+        if current < self.best:
+            self.best = current
+            self.wait = 0
+        else:
+            self.wait += 1
 
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
