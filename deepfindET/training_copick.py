@@ -211,15 +211,15 @@ class Train(core.DeepFindET):
 		# Schedule leaning rate
         initial_learning_rate = self.learning_rate
 
-        def defaultLR(epoch, lr):
+        def defaultLR(epoch):
             return float(initial_learning_rate)
 
-        def exp_decay(epoch, lr):
+        def exp_decay(epoch):
             if epoch < 5:
                 return float(initial_learning_rate)
             return float(initial_learning_rate * tf.math.exp(-0.2*(epoch-5)))
 
-        def cosine_decay(epoch, lr):
+        def cosine_decay(epoch):
             if epoch < 5:
                 return float(initial_learning_rate)
             remaining_epochs = 45 # 50-5
