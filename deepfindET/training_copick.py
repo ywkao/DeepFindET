@@ -459,7 +459,7 @@ class Train(core.DeepFindET):
         training = self.export_training_parameters()
 
         # Export learning rate parameters using the provided callback
-        learnRate = export_lr_parameters(callback)
+        learnRate = self.export_lr_parameters(callback)
 
         # Create an ExperimentConfig model to encapsulate the entire experiment setup
         train_config = settings.ExperimentConfig(
