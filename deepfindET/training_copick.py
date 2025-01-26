@@ -30,7 +30,7 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         if self.wait >= self.patience:
             scheduled_lr *= self.factor
             self.wait = 0
-        tf.keras.backend.set_value(self.model.optimizer.lr, max(scheduled_lr, self.min_lr))
+        tf.keras.backend.set_value(self.model.optimizer.inner_optimizer._learning_rate, max(scheduled_lr, self.min_lr))
 
     def on_epoch_end(self, epoch, logs=None):
         current = logs.get(self.monitor)
