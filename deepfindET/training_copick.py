@@ -24,13 +24,16 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         self.min_lr = min_lr
         self.wait = 0
         self.best = float('inf')
+        self.scheduled_lr = 1e-3 # dummy init
+        self.learning_rate_history = []
 
     def on_epoch_begin(self, epoch, logs=None):
         scheduled_lr = self.schedule_fn(epoch)
         if self.wait >= self.patience:
             scheduled_lr *= self.factor
             self.wait = 0
-        tf.keras.backend.set_value(self.model.optimizer.learning_rate, max(scheduled_lr, self.min_lr))
+        self.scheduled_lr = max(scheduled_lr, self.min_lr)
+        tf.keras.backend.set_value(self.model.optimizer.learning_rate, self.scheduled_lr)
 
     def on_epoch_end(self, epoch, logs=None):
         current = logs.get(self.monitor)
@@ -39,6 +42,13 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
             self.wait = 0
         else:
             self.wait += 1
+
+        # Get the current learning rate and store it in the history
+        self.learning_rate_history.append({
+            'epoch': epoch,
+            'learning_rate': self.scheduled_lr
+        })
+
 
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
@@ -107,26 +117,13 @@ class Train(core.DeepFindET):
         self.check_attributes()
         self.data_augmentor = augmentdata.DataAugmentation()
 
-        self.learning_rate_history = []
-
-    def on_epoch_end(self, epoch, logs=None):
-        """
-        Track learning rate at the end of each epoch.
-        """
-        # Get the current learning rate and store it in the history
-        learning_rate = self.net.optimizer.learning_rate.numpy()
-        self.learning_rate_history.append({
-            'epoch': epoch,
-            'learning_rate': learning_rate
-        })
-
-    def save_learning_rate(self):
+    def save_learning_rate(self, callback):
         """
         Save the recorded learning rates to a Pickle file.
         """
         filename = os.path.join(self.path_out, "learning_rates.pkl")
         with open(filename, 'wb') as f:
-            pickle.dump(self.learning_rate_history, f)
+            pickle.dump(callback.learning_rate_history, f)
         print(f"Learning rates saved to {filename}")
 
     def check_attributes(self):
@@ -296,7 +293,7 @@ class Train(core.DeepFindET):
         )
 
         # After training ends, save the learning rates
-        self.save_learning_rate()
+        self.save_learning_rate(scheduler_callback)
 
         # Save final model weights
         self.net.save( os.path.join(self.path_out, "net_weights_FINAL.h5") )
