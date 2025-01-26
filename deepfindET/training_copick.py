@@ -207,7 +207,7 @@ class Train(core.DeepFindET):
             if epoch < 5:
                 return float(initial_learning_rate)
             remaining_epochs = 45 # 50-5
-            return float(initial_learning_rate * (1 + tf.math.cos(tf.math.pi*(epoch-5)/remaining_epochs)) / 2)
+            return float(initial_learning_rate * (1 + np.cos(np.pi*(epoch-5)/remaining_epochs)) / 2)
 
         schedule_fn = (exp_decay if self.lr_scheduler == "exp_decay" else
                        cosine_decay if self.lr_scheduler == "cosine_decay" else
