@@ -187,7 +187,7 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
         if logs.get("learning_rate") is not None:
             self.history["learning_rate"].append(logs.get("learning_rate"))
         else:
-            self.history["learning_rate"].append(init_lr)
+            self.history["learning_rate"].append(self.init_lr)
 
         # Retrieve validation data and predictions
         val_data, val_target = [], []
