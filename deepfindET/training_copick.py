@@ -194,6 +194,7 @@ class Train(core.DeepFindET):
 
         # Schedule leaning rate
         initial_learning_rate = self.learning_rate
+        final_learning_rate = 1e-5
 
         def defaultLR(epoch):
             return float(initial_learning_rate)
@@ -201,13 +202,13 @@ class Train(core.DeepFindET):
         def exp_decay(epoch):
             if epoch < 5:
                 return float(initial_learning_rate)
-            return float(initial_learning_rate * tf.math.exp(-0.2*(epoch-5)))
+            return float(initial_learning_rate * np.exp(-0.1175*(epoch-5)))
 
         def cosine_decay(epoch):
             if epoch < 5:
                 return float(initial_learning_rate)
             remaining_epochs = 45 # 50-5
-            return float(initial_learning_rate * (1 + np.cos(np.pi*(epoch-5)/remaining_epochs)) / 2)
+            return float(final_learning_rate + (initial_learning_rate-final_learning_rate) * (1 + np.cos(np.pi*(epoch-5)/remaining_epochs)) / 2)
 
         schedule_fn = (exp_decay if self.lr_scheduler == "exp_decay" else
                        cosine_decay if self.lr_scheduler == "cosine_decay" else
@@ -216,7 +217,7 @@ class Train(core.DeepFindET):
         scheduler_callback = callbacks.CustomLRScheduler(
             schedule_fn=schedule_fn,
             monitor="val_f1",
-            factor=0.2,
+            factor=0.75,
             patience=5,
             min_lr=1e-6,
         )
@@ -230,6 +231,7 @@ class Train(core.DeepFindET):
             validation_steps=self.steps_per_valid,
             path_out=self.path_out,
             label_list=self.label_list,
+            init_lr=self.learning_rate,
         )
         swap_callback.plotting_callback = plotting_callback
 

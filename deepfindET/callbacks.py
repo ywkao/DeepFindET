@@ -145,7 +145,7 @@ class ClearMemoryCallback(tf.keras.callbacks.Callback):
 
 # Track and plot training metrics at the end of each epoch.
 class TrainingPlotCallback(tf.keras.callbacks.Callback):
-    def __init__(self, validation_data, validation_steps, path_out, label_list):
+    def __init__(self, validation_data, validation_steps, path_out, label_list, init_lr):
         """
         Args:
             validation_data (tf.data.Dataset): The validation dataset.
@@ -158,6 +158,7 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
         self.validation_steps = validation_steps
         self.path_out = path_out
         self.label_list = label_list
+        self.init_lr = init_lr
         self.history = {
             "loss": [],
             "acc": [],
@@ -166,6 +167,7 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
             "val_f1": [],
             "val_recall": [],
             "val_precision": [],
+            "learning_rate": [],
         }
 
     def on_epoch_end(self, epoch, logs=None):
@@ -181,6 +183,11 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
         self.history["acc"].append(logs.get("accuracy"))
         self.history["val_loss"].append(logs.get("val_loss"))
         self.history["val_acc"].append(logs.get("val_accuracy"))
+
+        if logs.get("learning_rate") is not None:
+            self.history["learning_rate"].append(logs.get("learning_rate"))
+        else:
+            self.history["learning_rate"].append(init_lr)
 
         # Retrieve validation data and predictions
         val_data, val_target = [], []
@@ -227,21 +234,23 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         self.min_lr = min_lr
         self.wait = 0
         self.best = float('inf')
-        self.scheduled_lr = 1e-3 # dummy init
+        self.scheduled_lr = 1e-2 # dummy init / upper bound
         self.learning_rate_history = []
 
     def on_epoch_begin(self, epoch, logs=None):
+        # schedule from a function
         scheduled_lr = self.schedule_fn(epoch)
+
+        # use smaller value if the previous one has been modified by a factor for performance-plateau
+        scheduled_lr = min(scheduled_lr, self.scheduled_lr)
+
+        # apply additional factor if performance is not improved for several epochs
         if self.wait >= self.patience:
             scheduled_lr *= self.factor
             self.wait = 0
+
+        # set lower bound of lr & assign lr
         self.scheduled_lr = max(scheduled_lr, self.min_lr)
-
-        print("Type of self.model:", type(self.model))
-        print("Type of self.model.optimizer:", type(self.model.optimizer))
-        print("Type of self.model.optimizer.learning_rate:", type(self.model.optimizer.learning_rate))
-        print("Value of self.model.optimizer.learning_rate:", self.model.optimizer.learning_rate)
-
         self.model.optimizer.learning_rate.assign(self.scheduled_lr)
 
     def on_epoch_end(self, epoch, logs=None):
@@ -250,6 +259,9 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
             'epoch': epoch,
             'learning_rate': self.scheduled_lr
         })
+
+        # Store lr in logs
+        logs["learning_rate"] = self.scheduled_lr
 
         # Check f1 score
         current = logs.get(self.monitor)

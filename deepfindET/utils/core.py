@@ -328,6 +328,10 @@ def save_history(history, filename):
     dset = h5file.create_dataset("val_recall", np.array(history["val_recall"]).shape, dtype="float16")
     dset[:] = np.array(history["val_recall"], dtype="float16")
 
+    # learning rate
+    dset = h5file.create_dataset("learning_rate", np.array(history["learning_rate"]).shape, dtype="float16")
+    dset[:] = np.array(history["learning_rate"], dtype="float16")
+
     h5file.close()
     return
 
@@ -383,6 +387,7 @@ def plot_history(history,
     hist_f1 = history["val_f1"]
     hist_recall = history["val_recall"]
     hist_precision = history["val_precision"]
+    hist_lr = history["learning_rate"]
 
     fig = plt.figure(figsize=(15, 12))
     plt.subplot(321)
@@ -398,7 +403,15 @@ def plot_history(history,
     plt.plot(hist_acc_valid, label="valid")
     plt.ylabel("accuracy")
     plt.xlabel("epochs")
+    plt.ylim(0.0, 1.0)
     plt.legend()
+    plt.grid()
+
+    plt.subplot(325)
+    plt.plot(hist_lr)
+    plt.ylabel("learning rate")
+    plt.xlabel("epochs")
+    plt.yscale("log")
     plt.grid()
 
     plt.subplot(322)
@@ -422,6 +435,20 @@ def plot_history(history,
 
     if save_figure:
         fig.savefig(filename)
+
+    # Zoomed-in y-scale range
+    fig2 = plt.figure()
+    plt.plot(hist_acc_train, label="train")
+    plt.plot(hist_acc_valid, label="valid")
+    plt.ylabel("accuracy")
+    plt.xlabel("epochs")
+    plt.ylim(0.8, 1.0)  # Zoomed-in range
+    plt.legend()
+    plt.grid()
+    plt.title("Zoomed-in Range")
+
+    if save_figure:
+        fig2.savefig(filename.replace(".png", "_zoomin.png"))
 
 def convert_hdf5_to_dictionary(filename: str):
     """
