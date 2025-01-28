@@ -252,9 +252,9 @@ class Train(core.DeepFindET):
             callbacks=[
                 tensorboard_callback,
                 save_weights_callback,
+                scheduler_callback,
                 plotting_callback,
                 swap_callback,
-                scheduler_callback,
             ],
             verbose=1,
         )

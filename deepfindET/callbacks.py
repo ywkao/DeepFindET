@@ -184,9 +184,15 @@ class TrainingPlotCallback(tf.keras.callbacks.Callback):
         self.history["val_loss"].append(logs.get("val_loss"))
         self.history["val_acc"].append(logs.get("val_accuracy"))
 
-        if logs.get("learning_rate") is not None:
-            self.history["learning_rate"].append(logs.get("learning_rate"))
-        else:
+        try:
+            current_lr = float(self.model.optimizer.learning_rate.numpy())
+            self.history["learning_rate"].append(current_lr)
+
+        except(AttributeError, ValueError):
+            if "learning_rate" in logs:
+                self.history["learning_rate"].append(logs.get("learning_rate"))
+                return
+            print(f"[WARNING] Could not get learning rate from optimizer or logs. Using initial LR: {self.init_lr}")
             self.history["learning_rate"].append(self.init_lr)
 
         # Retrieve validation data and predictions
