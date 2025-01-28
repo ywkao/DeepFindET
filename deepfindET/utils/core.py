@@ -403,7 +403,7 @@ def plot_history(history,
     plt.plot(hist_acc_valid, label="valid")
     plt.ylabel("accuracy")
     plt.xlabel("epochs")
-    plt.ylim(0.0, 1.0)
+    plt.ylim(0.8, 1.0)  # Zoomed-in range
     plt.legend()
     plt.grid()
 
@@ -436,13 +436,13 @@ def plot_history(history,
     if save_figure:
         fig.savefig(filename)
 
-    # Zoomed-in y-scale range
+    # full view in y-scale range
     fig2 = plt.figure()
     plt.plot(hist_acc_train, label="train")
     plt.plot(hist_acc_valid, label="valid")
     plt.ylabel("accuracy")
     plt.xlabel("epochs")
-    plt.ylim(0.8, 1.0)  # Zoomed-in range
+    plt.ylim(0.0, 1.0)
     plt.legend()
     plt.grid()
     plt.title("Zoomed-in Range")
