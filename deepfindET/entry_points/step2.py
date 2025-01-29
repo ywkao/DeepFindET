@@ -283,7 +283,7 @@ def train_model(
                     total_epochs=epochs,
                     constant_epochs=5,
                     learning_rate=learning_rate,
-                    final_learning_rate=0.00001
+                    final_learning_rate=0.00001,
                     optimizer=optimizer,
                     lr_scheduler=lr_scheduler)
     trainer.path_out = output_path  # output path
