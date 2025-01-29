@@ -17,7 +17,7 @@ mixed_precision.set_global_policy(policy)
 
 # TODO: add method for resuming training. It should load existing weights and train_history. So when restarting, the plot curves show prececedent epochs
 class Train(core.DeepFindET):
-    def __init__(self, Ncl, dim_in, learning_rate=0.0001, optimizer='Adam', lr_scheduler="default"):
+    def __init__(self, Ncl, dim_in, total_epochs=50, constant_epochs=5, learning_rate=0.0001, final_learning_rate=1e-5, optimizer='Adam', lr_scheduler="default"):
         print(f"[INFO] training_copick.py::Train: learning_rate = {learning_rate}")
         core.DeepFindET.__init__(self)
         self.path_out = "./"
@@ -41,8 +41,11 @@ class Train(core.DeepFindET):
         self.steps_per_valid = 10  # number of samples for validation
 
         # Optimization Paramters 
+        self.constant_epochs = constant_epochs
+        self.remaining_epochs = total_epochs - constant_epochs
         self.lr_scheduler = lr_scheduler
         self.learning_rate = learning_rate
+        self.final_learning_rate = final_learning_rate
         self.beta1 = 0.9
         self.beta2 = 0.999
         self.epsilon = 1e-8
@@ -81,6 +84,54 @@ class Train(core.DeepFindET):
 
         self.check_attributes()
         self.data_augmentor = augmentdata.DataAugmentation()
+
+    def get_scheduler_fn(self):
+        # Schedule leaning rate
+        def defaultLR(epoch):
+            return float(self.learning_rate)
+
+        def linear_decay(epoch):
+            if epoch < self.constant_epochs:
+                return float(self.learning_rate)
+            slope = (self.final_learning_rate-self.learning_rate) / self.remaining_epochs
+            return float(self.learning_rate+slope*(epoch-self.constant_epochs))
+
+        def exp_decay(epoch):
+            k = np.log(self.final_learning_rate/self.learning_rate) / self.remaining_epochs
+            if epoch < self.constant_epochs:
+                return float(self.learning_rate)
+            return float(self.learning_rate * np.exp(k*(epoch-self.constant_epochs)))
+
+        def cosine_decay(epoch):
+            if epoch < self.constant_epochs:
+                return float(self.learning_rate)
+            return float(self.final_learning_rate + (self.learning_rate-self.final_learning_rate) * (1 + np.cos(np.pi*(epoch-self.constant_epochs)/self.remaining_epochs)) / 2)
+
+        def cosine_restart(epoch, T_0=12, T_mult=1):
+            if epoch < self.constant_epochs:
+                return float(self.learning_rate)
+
+            # Calculate which cycle we're in and the epoch relative to cycle start
+            cycle = 0
+            cycle_start = self.constant_epochs  # Start after constant period
+            cycle_length = T_0
+
+            while epoch >= cycle_start + cycle_length:
+                cycle += 1
+                cycle_start += cycle_length
+                cycle_length *= T_mult
+
+            relative_epoch = epoch - cycle_start
+
+            return float(self.final_learning_rate + (self.learning_rate-self.final_learning_rate) *
+                        (1 + np.cos(np.pi * relative_epoch / cycle_length)) / 2)
+
+        return (exp_decay if self.lr_scheduler == "exp_decay" else
+                linear_decay if self.lr_scheduler == "linear_decay" else
+                cosine_decay if self.lr_scheduler == "cosine_decay" else
+                (lambda epoch: cosine_restart(epoch, T_0=12, T_mult=1)) if self.lr_scheduler == "cosine_restart" else
+                (lambda epoch: cosine_restart(epoch, T_0=12, T_mult=3)) if self.lr_scheduler == "cosine_restart_12_3" else
+                defaultLR)
 
     def save_learning_rate(self, callback):
         """
@@ -192,27 +243,7 @@ class Train(core.DeepFindET):
         callbacks.ClearMemoryCallback()
         save_weights_callback = callbacks.SaveWeightsCallback(self.path_out)
 
-        # Schedule leaning rate
-        initial_learning_rate = self.learning_rate
-        final_learning_rate = 1e-5
-
-        def defaultLR(epoch):
-            return float(initial_learning_rate)
-
-        def exp_decay(epoch):
-            if epoch < 5:
-                return float(initial_learning_rate)
-            return float(initial_learning_rate * np.exp(-0.1175*(epoch-5)))
-
-        def cosine_decay(epoch):
-            if epoch < 5:
-                return float(initial_learning_rate)
-            remaining_epochs = 45 # 50-5
-            return float(final_learning_rate + (initial_learning_rate-final_learning_rate) * (1 + np.cos(np.pi*(epoch-5)/remaining_epochs)) / 2)
-
-        schedule_fn = (exp_decay if self.lr_scheduler == "exp_decay" else
-                       cosine_decay if self.lr_scheduler == "cosine_decay" else
-                       defaultLR)
+        schedule_fn = self.get_scheduler_fn()
 
         scheduler_callback = callbacks.CustomLRScheduler(
             schedule_fn=schedule_fn,

@@ -259,7 +259,7 @@ def train_model(
     valid_tomo_ids: str = None,
     train_tomo_ids: str = None,
     class_weights: Optional[List[Tuple[str,float]]] = None,        
-    lr_scheduler: str = "default", # "exp_decay" | "cosine_decay"
+    lr_scheduler: str = "default", # "exp_decay" | "cosine_decay" | "linear_decay" | "cosine_restart" | "cosine_restart_12_3"
     learning_rate: float = 0.0001,
     optimizer: str = "Adam",
     ):
@@ -278,7 +278,14 @@ def train_model(
     Nclass = n_class
 
     # Initialize training task:
-    trainer = Train(Ncl=Nclass, dim_in=dim_in, learning_rate=learning_rate, optimizer=optimizer, lr_scheduler=lr_scheduler)
+    trainer = Train(Ncl=Nclass,
+                    dim_in=dim_in,
+                    total_epochs=epochs,
+                    constant_epochs=5,
+                    learning_rate=learning_rate,
+                    final_learning_rate=1e-5
+                    optimizer=optimizer,
+                    lr_scheduler=lr_scheduler)
     trainer.path_out = output_path  # output path
     trainer.batch_size = batch_size
     trainer.epochs = epochs
