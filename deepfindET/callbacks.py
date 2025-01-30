@@ -247,8 +247,9 @@ class CustomLRScheduler(tf.keras.callbacks.Callback):
         # schedule from a function
         scheduled_lr = self.schedule_fn(epoch)
 
-        # use smaller value if the previous one has been modified by a factor for performance-plateau
-        scheduled_lr = min(scheduled_lr, self.scheduled_lr)
+        ### # CAVEAT: this hinders cosine restart
+        ### # use smaller value if the previous one has been modified by a factor for performance-plateau
+        ### scheduled_lr = min(scheduled_lr, self.scheduled_lr)
 
         # apply additional factor if performance is not improved for several epochs
         if self.wait >= self.patience:
