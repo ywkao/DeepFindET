@@ -338,9 +338,9 @@ def train_model(
         tomo_ids = [r.name for r in copick.from_file(path_train).runs]
         (trainList, validationList, testList) = cm.split_datasets(
             tomo_ids,
-            train_ratio=0.9,
-            val_ratio=0.10,
-            test_ratio=0.1,
+            train_ratio=0.75,
+            val_ratio=0.15,
+            test_ratio=0.10,
             savePath=output_path,
         )
         # Swap if Test Runs is Larger than Validation Runs
