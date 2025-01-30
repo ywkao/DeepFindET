@@ -395,6 +395,7 @@ def plot_history(history,
     plt.plot(hist_loss_valid, label="valid")
     plt.ylabel("loss")
     plt.xlabel("epochs")
+    plt.yscale("log")
     plt.legend()
     plt.grid()
 
